@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi des Approvisionnements</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            font-size: 30px;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            text-transform: uppercase;
+            width: 100%;
+        }
+
+        main {
+            margin-top: 50px;
+            text-align: center;
+            width: 80%;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .day-selection, .form-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #bdc3c7;
+            border-radius: 10px;
+        }
+
+        .form-group {
+            margin-top: 20px;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 18px;
+            background-color: #2980b9;
+            color: white;
+            padding: 20px;
+            width: 100%;
+            margin-top: 40px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Suivi des Approvisionnements</h1>
+    </header>
+
+    <main>
+        <button id="startSupplyTracking">Lancer le suivi des approvisionnements</button>
+
+        <div id="daySelection" class="day-selection">
+            <label for="dayDropdown">Sélectionnez un jour:</label>
+            <select id="dayDropdown"></select>
+        </div>
+
+        <div id="formSection" class="form-section">
+            <h2>Informations pour le <span id="selectedDay"></span></h2>
+
+            <div class="form-group">
+                <label for="cementQuantity">Quantité de Ciment (en tonnes):</label>
+                <input type="number" id="cementQuantity" placeholder="Entrez la quantité de ciment">
+            </div>
+
+            <div class="form-group">
+                <label for="sandQuantity">Quantité de Sable (en m³):</label>
+                <input type="number" id="sandQuantity" placeholder="Entrez la quantité de sable">
+            </div>
+
+            <div class="form-group">
+                <label for="gravelQuantity">Quantité de Gravier (en m³):</label>
+                <input type="number" id="gravelQuantity" placeholder="Entrez la quantité de gravier">
+            </div>
+
+            <div class="form-group">
+                <label for="ironQuantity">Quantité de Fer (en tonnes):</label>
+                <input type="number" id="ironQuantity" placeholder="Entrez la quantité de fer">
+            </div>
+
+            <div class="form-group">
+                <label for="materialDescription">Description du Matériel:</label>
+                <textarea id="materialDescription" rows="4" placeholder="Décrivez le matériel ici..."></textarea>
+            </div>
+
+            <button id="sendDataButton">Envoyer les informations</button>
+        </div>
+    </main>
+
+    <footer>
+        MArisk
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCOA0a_rjXqY99KXyyuHEiPOJDGGapZQUo",
+            authDomain: "suivi-49954.firebaseapp.com",
+            databaseURL: "https://suivi-49954-default-rtdb.firebaseio.com",
+            projectId: "suivi-49954",
+            storageBucket: "suivi-49954.appspot.com",
+            messagingSenderId: "141836603566",
+            appId: "1:141836603566:web:aaff934468238d958cdd3f",
+            measurementId: "G-3CMYEPPYK8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const days = [
+            ...Array(31).keys()
+        ].map(i => `Août ${i + 1}`).concat([...Array(30).keys()].map(i => `Septembre ${i + 1}`));
+
+        document.getElementById("startSupplyTracking").addEventListener("click", function() {
+            document.getElementById("daySelection").style.display = "block";
+            const dayDropdown = document.getElementById("dayDropdown");
+            dayDropdown.innerHTML = `<option value="" disabled selected>Choisir un jour...</option>`;
+            days.forEach(day => {
+                const option = document.createElement("option");
+                option.value = day;
+                option.textContent = day;
+                dayDropdown.appendChild(option);
+            });
+        });
+
+        document.getElementById("dayDropdown").addEventListener("change", function() {
+            const selectedDay = this.value;
+            document.getElementById("selectedDay").textContent = selectedDay;
+            document.getElementById("formSection").style.display = "block";
+        });
+
+        document.getElementById("sendDataButton").addEventListener("click", function() {
+            const selectedDay = document.getElementById("selectedDay").textContent;
+            const cementQuantity = document.getElementById("cementQuantity").value;
+            const sandQuantity = document.getElementById("sandQuantity").value;
+            const gravelQuantity = document.getElementById("gravelQuantity").value;
+            const ironQuantity = document.getElementById("ironQuantity").value;
+            const materialDescription = document.getElementById("materialDescription").value;
+
+            if (cementQuantity && sandQuantity && gravelQuantity && ironQuantity && materialDescription) {
+                set(ref(db, 'supplies/' + selectedDay), {
+                    ciment: cementQuantity,
+                    sable: sandQuantity,
+                    gravier: gravelQuantity,
+                    fer: ironQuantity,
+                    description: materialDescription
+                })
+                .then(() => {
+                    alert("Les informations ont été envoyées avec succès!");
+                    document.getElementById("formSection").style.display = "none";
+                    document.getElementById("daySelection").style.display = "none";
+                })
+                .catch(error => {
+                    alert("Erreur lors de l'envoi des informations : " + error.message);
+                });
+            } else {
+                alert("Veuillez remplir tous les champs.");
+            }
+        });
+    </script>
+
+</body>
+</html>
